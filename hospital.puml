@@ -1,212 +1,187 @@
-@startuml hospital
+@startuml
 skinparam classAttributeIconSize 0
-skinparam linetype ortho
-hide empty members
-title Больница в Цветочном городе: капризы Пульки
 
-package weather {
-  interface WeatherDependent <<interface>> {
-    + onNewDay(w : Weather) : void
-  }
-
-  class Weather <<record>> {
-    + temperature : double
-    + humidity : double
-    + wind : double
-    --
-    + {static} random(r : Random) : Weather
-    + next(r : Random) : Weather
-    + isCold() : boolean
-    + isHot() : boolean
-    + isGloomy() : boolean
-  }
+class Hospital {
+  - {static} MAX_DAYS : int
+  - weather : Weather
+  - nurses : ArrayList<Nurse>
+  - patient : Patient
+  - kitchen : Kitchen
+  - listeners : ArrayList<NewDayListener>
+  - random : Random
+  - day : int
+  + runScenario() : void
+  - playDay() : void
+  - isFinished() : boolean
+  - printEnding() : void
 }
 
-package food {
-  enum DishType {
-    SOUP
-    PORRIDGE
-    CUTLET
-    PASTA
-    PUREE
-    KVASS
-    JELLY
-    --
-    - title : String
-    - hot : boolean
-    - needsSolidBase : boolean
-    + weight(w : Weather) : double
-  }
-
-  enum Ingredient {
-    CANDY
-    MARMALADE
-    CHOCOLATE
-    STRAWBERRY
-    APPLE
-    PEAR
-    MUSHROOM
-    POTATO
-    MEAT
-    ONION
-    --
-    - sweet : boolean
-    - solid : boolean
-  }
-
-  class Dish <<record>> {
-    + type : DishType
-    + ingredient : Ingredient
-    --
-    + isPossible() : boolean
-    + sameTypeAs(other : Dish) : boolean
-    + toString() : String
-  }
-
-  class Kitchen {
-    - cookedToday : int
-    + cook(order : Dish) : Dish
-    + newDay() : void
-  }
+interface "Hospital.NewDayListener" as NewDayListener <<functional>> {
+  + onNewDay() : void
 }
 
-package people {
-  enum Mood {
-    CALM
-    CAPRICIOUS
-    SATISFIED
-    TIRED
-    EXHAUSTED
-    IN_LOVE
-  }
-
-  abstract class Person {
-    - name : String
-    - mood : Mood
-    # random : Random
-    --
-    + {abstract} onNewDay(w : Weather) : void
-    # setMood(m : Mood) : void
-    + equals(o : Object) : boolean
-    + hashCode() : int
-    + toString() : String
-  }
-
-  interface Feeder <<interface>> {
-    + feed(p : Patient, kitchen : Kitchen) : boolean
-  }
-
-  interface Capricious <<interface>> {
-    + accept(d : Dish, from : Staff) : boolean
-    + inventExcuse(d : Dish) : String
-    + currentWish() : Dish
-  }
-
-  abstract class Staff {
-    - menu : ArrayList<Dish>
-    - fatigue : int
-    - maxFatigue : int
-    - typePreferences : double[]
-    --
-    + feed(p : Patient, kitchen : Kitchen) : boolean
-    + onNewDay(w : Weather) : void
-    + isExhausted() : boolean
-    # tire(amount : int) : void
-    # {abstract} generateMenu(w : Weather) : void
-    # {abstract} fatigueCost() : int
-  }
-
-  class Doctor {
-    # generateMenu(w : Weather) : void
-    # fatigueCost() : int
-    + examine(p : Patient) : void
-  }
-
-  class Nurse {
-    # generateMenu(w : Weather) : void
-    # fatigueCost() : int
-    + complain() : void
-  }
-
-  class Patient {
-    - wishes : ArrayList<Dish>
-    - capriciousness : double
-    - health : int
-    - attraction : Map<Staff, Integer>
-    --
-    + onNewDay(w : Weather) : void
-    + accept(d : Dish, from : Staff) : boolean
-    + inventExcuse(d : Dish) : String
-    + currentWish() : Dish
-    + isInLove() : boolean
-    + isRecovered() : boolean
-  }
+class Kitchen {
+  - cookedToday : int
+  + cook(order : Dish) : Dish
+  + onNewDay() : void
+  + getCookedToday() : int
+  + toString() : String
 }
 
-package exceptions {
-  class ImpossibleDishException {
-    - dish : Dish
-    + getMessage() : String
-  }
+class Weather <<record>> {
+  - temperature : double
+  - humidity : double
+  - wind : double
+  + {static} random(r : Random) : Weather
+  + next(r : Random) : Weather
+  + isCold() : boolean
+  + isHot() : boolean
+  + isGloomy() : boolean
+  + toString() : String
+}
 
-  class StaffExhaustedException {
-    - staffName : String
-    + getMessage() : String
-  }
+abstract class Person {
+  - name : String
+  - mood : Mood
+  # random : Random
+  + {abstract} onNewDay(w : Weather) : void
+  + getName() : String
+  + getMood() : Mood
+  # setMood(m : Mood) : void
+  + equals(o : Object) : boolean
+  + hashCode() : int
+  + toString() : String
+}
+
+enum Mood {
+  CALM
+  CAPRICIOUS
+  SATISFIED
+  TIRED
+  EXHAUSTED
+  IN_LOVE
+  --
+  - description : String
+  + getDescription() : String
+}
+
+class Nurse {
+  - {static} MAX_APPROACHES_PER_DAY : int
+  - menu : ArrayList<Dish>
+  - fatigue : int
+  - maxFatigue : int
+  - approachesToday : int
+  + onNewDay(w : Weather) : void
+  + approach(p : Patient, k : Kitchen) : boolean
+  + canApproach() : boolean
+  + isExhausted() : boolean
+  - complain() : void
+  - pickFromMenu(wish : Dish) : Dish
+  - score(d : Dish, wish : Dish) : int
+  - tire(amount : int) : void
+  + toString() : String
+}
+
+class Patient {
+  - {static} LOVE_THRESHOLD : int
+  - {static} RECOVERY_HEALTH : int
+  - {static} WISHES_PER_DAY : int
+  - wishes : ArrayList<Dish>
+  - capriciousness : double
+  - health : int
+  - attraction : Map<Nurse, Integer>
+  - weather : Weather
+  + onNewDay(w : Weather) : void
+  + accept(d : Dish, from : Nurse) : boolean
+  + currentWish() : Dish
+  + favourite() : Nurse
+  + isInLove() : boolean
+  + isRecovered() : boolean
+  - inventWish() : Dish
+  - inventExcuse(d : Dish) : String
+  + toString() : String
+}
+
+class Dish <<record>> {
+  - type : DishType
+  - ingredient : Ingredient
+  + {static} random(r : Random) : Dish
+  + isPossible() : boolean
+  + sameTypeAs(other : Dish) : boolean
+  + toString() : String
+}
+
+enum DishType {
+  SOUP
+  PORRIDGE
+  CUTLET
+  PASTA
+  PUREE
+  KVASS
+  JELLY
+  --
+  - title : String
+  - hot : boolean
+  - needsSolidBase : boolean
+  + weight(w : Weather) : double
+  + getTitle() : String
+  + needsSolidBase() : boolean
+}
+
+enum Ingredient {
+  CANDY
+  MARMALADE
+  CHOCOLATE
+  STRAWBERRY
+  APPLE
+  PEAR
+  MUSHROOM
+  POTATO
+  MEAT
+  ONION
+  --
+  - title : String
+  - sweet : boolean
+  - solid : boolean
+  + getTitle() : String
+  + isSweet() : boolean
+  + isSolid() : boolean
 }
 
 class Exception
 class RuntimeException
 
-class Hospital {
-  - weather : Weather
-  - staff : ArrayList<Staff>
-  - patients : ArrayList<Patient>
-  - kitchen : Kitchen
-  - day : int
-  - {static} MAX_DAYS : int
-  --
-  + runScenario() : void
-  - playDay() : void
-  - isFinished() : boolean
+class ImpossibleDishException {
+  - dish : Dish
+  + getMessage() : String
 }
 
-class Main {
-  + {static} main(args : String[]) : void
+class NurseExhaustedException {
+  - nurseName : String
+  + getMessage() : String
 }
 
-' --- наследование и реализация ---
-Person ..|> WeatherDependent
-Person <|-- Staff
+Hospital *-left- Weather
+Hospital +-right- NewDayListener
+NewDayListener <|.down. Kitchen
+Hospital *-- Kitchen
+Hospital -[hidden]down- Person
+Hospital o-- "1..*" Nurse
+Hospital o-- "1" Patient
+
+Person -right-> Mood
+Person <|-- Nurse
 Person <|-- Patient
-Staff ..|> Feeder
-Staff <|-- Doctor
-Staff <|-- Nurse
-Patient ..|> Capricious
-Exception <|-- ImpossibleDishException
-RuntimeException <|-- StaffExhaustedException
+Patient -left-> "*" Nurse : attraction
 
-' --- композиция и ассоциации ---
+Nurse o-- "2" Dish : menu
+Patient o-- "*" Dish : wishes
 Dish *-- DishType
 Dish *-- Ingredient
-Person --> Mood
-Staff o-- "*" Dish : menu
-Patient o-- "*" Dish : wishes
-Patient --> "*" Staff : attraction
-Hospital *-- "1" Weather
-Hospital *-- "1" Kitchen
-Hospital o-- "*" Staff
-Hospital o-- "*" Patient
-Main ..> Hospital : создаёт
 
-' --- зависимости ---
-DishType ..> Weather : weight()
-Staff ..> Kitchen : cook()
+Exception <|-- ImpossibleDishException
 Kitchen ..> ImpossibleDishException : throws
-Staff ..> StaffExhaustedException : throws
-Weather ..> IllegalArgumentException : throws
-
-class IllegalArgumentException
-RuntimeException <|-- IllegalArgumentException
+RuntimeException <|-- NurseExhaustedException
+Nurse .left.> NurseExhaustedException : throws
 
 @enduml

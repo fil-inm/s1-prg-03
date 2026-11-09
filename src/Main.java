@@ -1,15 +1,40 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import hospital.Hospital;
+import people.Nurse;
+import people.Patient;
+import weather.Weather;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+
 public class Main {
     public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+        Random random = new Random();
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
+        Weather weather;
+        if (args.length == 3) {
+            try {
+                weather = new Weather(Double.parseDouble(args[0]), Double.parseDouble(args[1]),
+                        Double.parseDouble(args[2]));
+            } catch (IllegalArgumentException e) {
+                System.out.println("Неверная погода: " + e.getMessage() + ". Беру случайную.");
+                weather = Weather.random(random);
+            }
+        } else {
+            weather = Weather.random(random);
         }
+
+        List<String> names = new ArrayList<>(Arrays.asList("Ромашка", "Ласточка", "Белочка", "Кисонька", "Галочка"));
+        Collections.shuffle(names, random);
+        int count = 2 + random.nextInt(3);
+        List<Nurse> nurses = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            nurses.add(new Nurse(names.get(i), random));
+        }
+
+        Patient pulka = new Patient("Пулька", random);
+        new Hospital(weather, nurses, pulka, random).runScenario();
     }
 }
