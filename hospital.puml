@@ -1,0 +1,212 @@
+@startuml hospital
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+hide empty members
+title Больница в Цветочном городе: капризы Пульки
+
+package weather {
+  interface WeatherDependent <<interface>> {
+    + onNewDay(w : Weather) : void
+  }
+
+  class Weather <<record>> {
+    + temperature : double
+    + humidity : double
+    + wind : double
+    --
+    + {static} random(r : Random) : Weather
+    + next(r : Random) : Weather
+    + isCold() : boolean
+    + isHot() : boolean
+    + isGloomy() : boolean
+  }
+}
+
+package food {
+  enum DishType {
+    SOUP
+    PORRIDGE
+    CUTLET
+    PASTA
+    PUREE
+    KVASS
+    JELLY
+    --
+    - title : String
+    - hot : boolean
+    - needsSolidBase : boolean
+    + weight(w : Weather) : double
+  }
+
+  enum Ingredient {
+    CANDY
+    MARMALADE
+    CHOCOLATE
+    STRAWBERRY
+    APPLE
+    PEAR
+    MUSHROOM
+    POTATO
+    MEAT
+    ONION
+    --
+    - sweet : boolean
+    - solid : boolean
+  }
+
+  class Dish <<record>> {
+    + type : DishType
+    + ingredient : Ingredient
+    --
+    + isPossible() : boolean
+    + sameTypeAs(other : Dish) : boolean
+    + toString() : String
+  }
+
+  class Kitchen {
+    - cookedToday : int
+    + cook(order : Dish) : Dish
+    + newDay() : void
+  }
+}
+
+package people {
+  enum Mood {
+    CALM
+    CAPRICIOUS
+    SATISFIED
+    TIRED
+    EXHAUSTED
+    IN_LOVE
+  }
+
+  abstract class Person {
+    - name : String
+    - mood : Mood
+    # random : Random
+    --
+    + {abstract} onNewDay(w : Weather) : void
+    # setMood(m : Mood) : void
+    + equals(o : Object) : boolean
+    + hashCode() : int
+    + toString() : String
+  }
+
+  interface Feeder <<interface>> {
+    + feed(p : Patient, kitchen : Kitchen) : boolean
+  }
+
+  interface Capricious <<interface>> {
+    + accept(d : Dish, from : Staff) : boolean
+    + inventExcuse(d : Dish) : String
+    + currentWish() : Dish
+  }
+
+  abstract class Staff {
+    - menu : ArrayList<Dish>
+    - fatigue : int
+    - maxFatigue : int
+    - typePreferences : double[]
+    --
+    + feed(p : Patient, kitchen : Kitchen) : boolean
+    + onNewDay(w : Weather) : void
+    + isExhausted() : boolean
+    # tire(amount : int) : void
+    # {abstract} generateMenu(w : Weather) : void
+    # {abstract} fatigueCost() : int
+  }
+
+  class Doctor {
+    # generateMenu(w : Weather) : void
+    # fatigueCost() : int
+    + examine(p : Patient) : void
+  }
+
+  class Nurse {
+    # generateMenu(w : Weather) : void
+    # fatigueCost() : int
+    + complain() : void
+  }
+
+  class Patient {
+    - wishes : ArrayList<Dish>
+    - capriciousness : double
+    - health : int
+    - attraction : Map<Staff, Integer>
+    --
+    + onNewDay(w : Weather) : void
+    + accept(d : Dish, from : Staff) : boolean
+    + inventExcuse(d : Dish) : String
+    + currentWish() : Dish
+    + isInLove() : boolean
+    + isRecovered() : boolean
+  }
+}
+
+package exceptions {
+  class ImpossibleDishException {
+    - dish : Dish
+    + getMessage() : String
+  }
+
+  class StaffExhaustedException {
+    - staffName : String
+    + getMessage() : String
+  }
+}
+
+class Exception
+class RuntimeException
+
+class Hospital {
+  - weather : Weather
+  - staff : ArrayList<Staff>
+  - patients : ArrayList<Patient>
+  - kitchen : Kitchen
+  - day : int
+  - {static} MAX_DAYS : int
+  --
+  + runScenario() : void
+  - playDay() : void
+  - isFinished() : boolean
+}
+
+class Main {
+  + {static} main(args : String[]) : void
+}
+
+' --- наследование и реализация ---
+Person ..|> WeatherDependent
+Person <|-- Staff
+Person <|-- Patient
+Staff ..|> Feeder
+Staff <|-- Doctor
+Staff <|-- Nurse
+Patient ..|> Capricious
+Exception <|-- ImpossibleDishException
+RuntimeException <|-- StaffExhaustedException
+
+' --- композиция и ассоциации ---
+Dish *-- DishType
+Dish *-- Ingredient
+Person --> Mood
+Staff o-- "*" Dish : menu
+Patient o-- "*" Dish : wishes
+Patient --> "*" Staff : attraction
+Hospital *-- "1" Weather
+Hospital *-- "1" Kitchen
+Hospital o-- "*" Staff
+Hospital o-- "*" Patient
+Main ..> Hospital : создаёт
+
+' --- зависимости ---
+DishType ..> Weather : weight()
+Staff ..> Kitchen : cook()
+Kitchen ..> ImpossibleDishException : throws
+Staff ..> StaffExhaustedException : throws
+Weather ..> IllegalArgumentException : throws
+
+class IllegalArgumentException
+RuntimeException <|-- IllegalArgumentException
+
+@enduml
